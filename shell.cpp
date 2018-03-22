@@ -50,10 +50,6 @@ void Shell::shellExit() {
     this->keepRunning = false;
 }
 
-void Shell::clear() {
-
-}
-
 void Shell::shellPrompt() {
     cout << "# -> ";
 }
