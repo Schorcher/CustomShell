@@ -10,12 +10,16 @@
 
 Shell::Shell(char **env) {
     this->keepRunning = true;
+    this->env_ptr = env;
+    //this->dir = opendir(".");
+    this->cwd = ".";
+
+
 }
 
 
 void Shell::run() {
     printWelcome();
-
     while(keepRunning) {
         shellLoop();
     }
@@ -23,7 +27,7 @@ void Shell::run() {
 }
 
 void Shell::shellLoop() {
-    auto cmd = new Command();
+    auto cmd = new Command(this);
     string line;
 
     // Prompt user for input
@@ -63,4 +67,16 @@ void Shell::printWelcome() {
 
 void Shell::printExit() {
     cout << "Now exiting shell..." << endl;
+}
+
+char **Shell::getEnvPtr() {
+    return this->env_ptr;
+}
+
+char* Shell::getCWD() {
+    return this->cwd;
+}
+
+void Shell::setCWD(char* str) {
+    this->cwd = str;
 }

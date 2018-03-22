@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include "shell.h"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ private:
 
     enum COMMAND_CODES{
         ls,
+        ll,
         cp,
         cat,
         grep,
@@ -30,6 +32,8 @@ private:
     vector<string> arguments;
 
     int numberOfArgs;
+
+    Shell *parent;
 
     string input;
 
@@ -45,10 +49,11 @@ private:
     void exit_func();
     void help_func();
 
+    bool streamfile(int srcfile, int dstfile);
 
 public:
 
-    Command();
+    Command(Shell *parent);
 
 
 

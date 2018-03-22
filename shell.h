@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <fcntl.h>
+#include <dirent.h>
 
 using namespace std;
 
@@ -38,27 +39,33 @@ class Shell {
 public:
 
     Shell(char ** env);
-    typedef void (Shell::*Fctn)(string arg);
+    //typedef void (Shell::*Fctn)(string arg);
 
     void run();
+
     void shellExit();
 
+    char ** getEnvPtr();
+
+    char * getCWD();
+
+    void setCWD(char* str);
 
 
 private:
 
-    char *line;
     pid_t  SH_PID;
     bool keepRunning;
 
-    map<string, Fctn> commands;
+    //map<string, Fctn> commands;
     map<string, string> vars;
     char ** env_ptr;
 
+    char* cwd = nullptr;
+
+    uid_t uid;
 
     void shellLoop();
-
-    void printDir();
 
     void shellPrompt();
 
