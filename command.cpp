@@ -168,7 +168,6 @@ void Command::ls_func() {
                              filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
                              pdir->d_name);
                 }
-                //cout << "\t" << pdir->d_name <<endl;
             }
 
             if(first != nullptr) {
@@ -181,7 +180,6 @@ void Command::ls_func() {
             }
 
             seekdir(dir,0);
-
             while (pdir = readdir(dir)) {
 
                 if(strcmp(pdir->d_name, ".")==0 || strcmp(pdir->d_name, "..")==0) {
@@ -290,7 +288,7 @@ void Command::cp_func() {
         //DIR* dir;
 
         for(int i=1; i<arguments.size()-1; i++){
-             files.push_back(arguments.at(1));
+             files.push_back(arguments.at(i));
         }
         dir = arguments.back().c_str();
 
@@ -355,14 +353,83 @@ void Command::cp_func() {
             close(srcFile);
             return;
         }
+
+        streamfile(srcFile, dstFile);
+        close(srcFile);
+        close(dstFile);
     }
 }
 
 void Command::cat_func() {
 
+    vector<string> files;
+    for(int i=1; i<arguments.size()-1; i++){
+        files.push_back(arguments.at(i));
+    }
+
+    if(arguments.at(arguments.size()-2) == ">") {
+        // TODO: Do multiple file output to file
+
+
+    } else {
+        // Print the files to console
+        for(int i = 0; i < files.size(); i++)
+        {
+            int fd = open(files.at(i).c_str(), O_RDONLY);
+            struct stat fds;
+            int res = fstat(fd, &fds);
+            if(res == -1)
+            {
+                printf("Failed to open file: %s.\n", files.at(i).c_str());
+                close(fd);
+                continue;
+            }
+
+            char* fileData = (char*)malloc(fds.st_size);
+            res = read(fd, fileData, fds.st_size);
+            if(res == -1)
+            {
+                printf("Failed to read file: %s.\n", files.at(i).c_str());
+                free(fileData);
+                close(fd);
+            }
+            printf("%s", fileData);
+            free(fileData);
+            close(fd);
+        }
+    }
 }
 
 void Command::grep_func() {
+
+    char line[100];
+    FILE *fp;
+
+    for(int i=2; i<arguments.size(); ++i) {
+        // initialsing the file pointer to read
+        fp = fopen(arguments.at(i).c_str(),"r");
+
+//        if(arguments.at(1).front() == "\"") {
+//            arguments.erase(0,1);
+//        }
+
+        // reading line by line and comparing each word in line
+        while(fscanf(fp , "%[^\n]\n" , line)!=EOF)
+        {
+            if(strstr(line , arguments.at(1).c_str()) != nullptr)
+            {
+                // print that line
+                cout << "\nFrom file: " << arguments.at(i) << endl;
+                cout << "\t" << line << endl;
+                //printf("%s\n" , line);
+            }
+            else
+            {
+                continue;
+            }
+        }
+        fclose(fp);
+    }
 
 }
 
