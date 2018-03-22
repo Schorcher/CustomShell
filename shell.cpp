@@ -13,8 +13,6 @@ Shell::Shell(char **env) {
     this->env_ptr = env;
     //this->dir = opendir(".");
     this->cwd = ".";
-
-
 }
 
 

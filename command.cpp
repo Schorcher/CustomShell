@@ -108,10 +108,6 @@ void Command::ls_func() {
     dirent* pdir;
     dir = opendir(".");
 
-    struct winsize wsz;
-    ioctl(0, TIOCGWINSZ, &wsz);
-    int numCols = wsz.ws_col/26;
-
     if(arguments.front() == "ll" || arguments.size() > 1) {
         // Process arguments to ls
         if(arguments.front() == "ll" || arguments.at(1) == "-l") {
@@ -178,8 +174,9 @@ void Command::ls_func() {
                 cout << second << endl;
                 free(second);
             }
-
-            seekdir(dir,0);
+            dir = nullptr;
+            dir = opendir(".");
+            //seekdir(dir,0);
             while (pdir = readdir(dir)) {
 
                 if(strcmp(pdir->d_name, ".")==0 || strcmp(pdir->d_name, "..")==0) {
@@ -266,13 +263,13 @@ bool Command::streamfile(int srcfile, int dstfile) {
 
     if(numBytes < 0) {
         char* strerr = strerror(errno);
-        cout << strerr << endl;
+        //cout << ANSI_COLOR_RED << strerr << ANSI_COLOR_RESET << endl;
         return false;
     } else {
         int res = ftruncate(dstfile, totalbytes);
         if(res < 0) {
             char* strerr = strerror(errno);
-            cout << strerr << endl;
+            //cout << ANSI_COLOR_RED << strerr << ANSI_COLOR_RESET << endl;
             return false;
         }
         return true;
@@ -361,42 +358,60 @@ void Command::cp_func() {
 }
 
 void Command::cat_func() {
-
-    vector<string> files;
-    for(int i=1; i<arguments.size()-1; i++){
-        files.push_back(arguments.at(i));
-    }
+    char line[100];
+    FILE *fp;
 
     if(arguments.at(arguments.size()-2) == ">") {
         // TODO: Do multiple file output to file
+        vector<string> files;
+        for(int i=1; i<arguments.size()-1; i++){
+            files.push_back(arguments.at(i));
+        }
+
+        const char* output;
+        const char* srcFile;
+        output = arguments.back().c_str();
+
+        int dstFile = open(output, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+        if(dstFile < 0)
+        {
+            char* strerr = strerror(errno);
+            cout << strerr << endl;
+            return;
+        }
+
+        for(int i=0; i<files.size(); ++i) {
+
+            srcFile = files.at(i).c_str();
+            int fileOpen = open(srcFile, O_RDONLY);
+
+            streamfile(fileOpen,dstFile);
+            close(fileOpen);
+        }
+
+        close(dstFile);
 
 
     } else {
-        // Print the files to console
-        for(int i = 0; i < files.size(); i++)
-        {
-            int fd = open(files.at(i).c_str(), O_RDONLY);
-            struct stat fds;
-            int res = fstat(fd, &fds);
-            if(res == -1)
-            {
-                printf("Failed to open file: %s.\n", files.at(i).c_str());
-                close(fd);
-                continue;
-            }
+        // initialsing the file pointer to read
+        //fp = fopen(arguments.at(1).c_str(),"r");
 
-            char* fileData = (char*)malloc(fds.st_size);
-            res = read(fd, fileData, fds.st_size);
-            if(res == -1)
-            {
-                printf("Failed to read file: %s.\n", files.at(i).c_str());
-                free(fileData);
-                close(fd);
-            }
-            printf("%s", fileData);
-            free(fileData);
-            close(fd);
+        if(! (fp = fopen(arguments.at(1).c_str(),"r")))
+        {
+            //char* strerr = strerror(errno);
+            cout << "cat: " << arguments.at(1).c_str() << ": No such file or directory" << endl;
+            return;
         }
+
+
+        // reading line by line and comparing each word in line
+        while(fscanf(fp , "%[^\n]\n" , line)!=EOF)
+        {
+            // print that line
+            cout << "\t" << line << endl;
+            //printf("%s\n" , line);
+        }
+        fclose(fp);
     }
 }
 
