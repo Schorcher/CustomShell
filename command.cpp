@@ -15,6 +15,10 @@
 #include <dirent.h>
 #include <zconf.h>
 #include <sys/stat.h>
+#include <ctime>
+#include <pwd.h>
+#include <grp.h>
+#include <sys/ioctl.h>
 
 #define ANSI_COLOR_RED      "\x1b[91m"
 #define ANSI_COLOR_GREEN    "\x1b[92m"
@@ -104,13 +108,134 @@ void Command::ls_func() {
     dirent* pdir;
     dir = opendir(".");
 
+    struct winsize wsz;
+    ioctl(0, TIOCGWINSZ, &wsz);
+    int numCols = wsz.ws_col/26;
+
     if(arguments.front() == "ll" || arguments.size() > 1) {
         // Process arguments to ls
         if(arguments.front() == "ll" || arguments.at(1) == "-l") {
             // Standard ls -l implementation with 1 args
+            char* first = nullptr;
+            char* second = nullptr;
+
             while (pdir = readdir(dir)) {
-                cout << "\t" << pdir->d_name <<endl;
+
+                struct stat filestat;
+                stat(pdir->d_name, &filestat);
+
+                // Create permissions
+                char perms[11] = "--------\0";
+                mode_t fm = filestat.st_mode;
+                if(pdir->d_type == DT_DIR)
+                    perms[0] = 'd';
+                if(fm & S_IRUSR)
+                    perms[1] = 'r';
+                if(fm & S_IWUSR)
+                    perms[2] = 'w';
+                if(fm & S_IXUSR)
+                    perms[3] = 'x';
+                if(fm & S_IRGRP)
+                    perms[4] = 'r';
+                if(fm & S_IWGRP)
+                    perms[5] = 'w';
+                if(fm & S_IXGRP)
+                    perms[6] = 'x';
+                if(fm & S_IROTH)
+                    perms[7] = 'r';
+                if(fm & S_IWOTH)
+                    perms[8] = 'w';
+                if(fm & S_IXOTH)
+                    perms[9] = 'x';
+
+                // Create time
+                time_t tt = filestat.st_mtime;
+                char strTime[128];
+                struct tm ltime = *localtime(&tt);
+                strftime(strTime, 127, "%b %I:%M:%S", &ltime);
+
+                struct passwd userdat = *getpwuid(filestat.st_uid);
+                struct group groupdat = *getgrgid(filestat.st_gid);
+
+                if(strcmp(pdir->d_name, ".") == 0) {
+                    first = (char*)malloc(1024);
+                    snprintf(first, 1023, "%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s" ANSI_COLOR_RESET,perms,
+                             filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
+                             pdir->d_name);
+                } else if(strcmp(pdir->d_name, "..") == 0) {
+                    second = (char*)malloc(1024);
+                    snprintf(second, 1023, "%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s" ANSI_COLOR_RESET,perms,
+                             filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
+                             pdir->d_name);
+                }
+                //cout << "\t" << pdir->d_name <<endl;
             }
+
+            if(first != nullptr) {
+                cout << first << endl;
+                free(first);
+            }
+            if(second != nullptr) {
+                cout << second << endl;
+                free(second);
+            }
+
+            seekdir(dir,0);
+
+            while (pdir = readdir(dir)) {
+
+                if(strcmp(pdir->d_name, ".")==0 || strcmp(pdir->d_name, "..")==0) {
+                    continue;
+                }
+
+                struct stat filestat;
+                stat(pdir->d_name, &filestat);
+
+                // Create permissions
+                char perms[11] = "--------\0";
+                mode_t fm = filestat.st_mode;
+                if(pdir->d_type == DT_DIR)
+                    perms[0] = 'd';
+                if(fm & S_IRUSR)
+                    perms[1] = 'r';
+                if(fm & S_IWUSR)
+                    perms[2] = 'w';
+                if(fm & S_IXUSR)
+                    perms[3] = 'x';
+                if(fm & S_IRGRP)
+                    perms[4] = 'r';
+                if(fm & S_IWGRP)
+                    perms[5] = 'w';
+                if(fm & S_IXGRP)
+                    perms[6] = 'x';
+                if(fm & S_IROTH)
+                    perms[7] = 'r';
+                if(fm & S_IWOTH)
+                    perms[8] = 'w';
+                if(fm & S_IXOTH)
+                    perms[9] = 'x';
+
+                // Create time
+                time_t tt = filestat.st_mtime;
+                char strTime[128];
+                struct tm ltime = *localtime(&tt);
+                strftime(strTime, 127, "%b %I:%M:%S", &ltime);
+
+                struct passwd userdat = *getpwuid(filestat.st_uid);
+                struct group groupdat = *getgrgid(filestat.st_gid);
+
+                if(pdir->d_type == DT_DIR) {
+                    printf("%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s\n" ANSI_COLOR_RESET,perms,
+                             filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
+                             pdir->d_name);
+                } else {
+                    printf("%s. %li %s:%s %li %s %s\n",perms,
+                             filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
+                             pdir->d_name);
+                }
+
+            }
+
         } else {
             cout << "Error: Unsupported argument" << endl;
         }
