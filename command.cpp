@@ -68,6 +68,7 @@ Command::COMMAND_CODES Command::hash(string const &str) {
     if (str == "ls") return ls;
     if (str == "ll") return ll;
     if (str == "cp") return cp;
+    if (str == "cd") return cd;
     if (str == "cat") return cat;
     if (str == "grep") return grep;
     if (str == "stat") return statf;
@@ -100,6 +101,9 @@ void Command::execute() {
             break;
         case cp:
             cp_func();
+            break;
+        case cd:
+            cd_func();
             break;
         case cat:
             cat_func();
@@ -413,6 +417,25 @@ void Command::cp_func() {
         streamfile(srcFile, dstFile);
         close(srcFile);
         close(dstFile);
+    }
+}
+
+void Command::cd_func(){
+    const char* dir_path;
+
+    dir_path = arguments.at(1).c_str();
+    if(chdir(dir_path)){
+        switch(errno)
+        {
+        case ENOENT:
+            printf("Unable to locate the directory: %s\n", dir_path);
+            break;
+        default:
+            printf("Unknown error.\n");
+            break;
+        }
+    }else{
+        printf("Changed to directory: %s\n", arguments.at(1).c_str());
     }
 }
 
