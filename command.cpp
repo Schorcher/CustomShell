@@ -482,6 +482,13 @@ void Command::grep_func() {
 //        if(arguments.at(1).front() == "\"") {
 //            arguments.erase(0,1);
 //        }
+        
+        if(arguments.at(1).front() == '\"') {
+            arguments.at(1).front() = '\0';
+        }
+        if(arguments.at(1).back() == '\"'){
+            arguments.at(1).back() = '\0';
+        }
 
         // reading line by line and comparing each word in line
         while(fscanf(fp , "%[^\n]\n" , line)!=EOF)
