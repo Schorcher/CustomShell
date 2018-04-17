@@ -24,6 +24,7 @@
 #include <csignal>
 #include <sys/wait.h>
 #include <thread>
+#include <time.h>
 
 #define ANSI_COLOR_RED      "\x1b[91m"
 #define ANSI_COLOR_GREEN    "\x1b[92m"
@@ -33,7 +34,6 @@
 #define ANSI_COLOR_CYAN     "\x1b[91m"
 #define ANSI_COLOR_RESET    "\x1b[0m"
 #define ANSI_TEXT_BOLD      "\x1b[1m"
-
 
 using namespace std;
 
@@ -70,6 +70,7 @@ Command::COMMAND_CODES Command::hash(string const &str) {
     if (str == "cp") return cp;
     if (str == "cat") return cat;
     if (str == "grep") return grep;
+    if (str == "stat") return statf;
     if (str == "clear") return clear;
     if (str == "exit") return exit;
     if (str == "help") return help;
@@ -105,6 +106,9 @@ void Command::execute() {
             break;
         case grep:
             grep_func();
+            break;
+        case statf:
+            stat_func();
             break;
         case clear:
             clear_func();
@@ -508,6 +512,64 @@ void Command::grep_func() {
         fclose(fp);
     }
 
+}
+
+void Command::stat_func(){
+    struct stat s;
+    const char* file_path;
+
+    file_path = arguments.at(1).c_str();
+    if(stat(file_path, &s)==1){
+        printf("Error unable to locat %s", file_path);
+    }
+    else{
+
+        char perms[11] = "---------\0";
+                mode_t fm = s.st_mode;
+                if(fm & S_IFDIR)
+                    perms[0] = 'd';
+                if(fm & S_IRUSR)
+                    perms[1] = 'r';
+                if(fm & S_IWUSR)
+                    perms[2] = 'w';
+                if(fm & S_IXUSR)
+                    perms[3] = 'x';
+                if(fm & S_IRGRP)
+                    perms[4] = 'r';
+                if(fm & S_IWGRP)
+                    perms[5] = 'w';
+                if(fm & S_IXGRP)
+                    perms[6] = 'x';
+                if(fm & S_IROTH)
+                    perms[7] = 'r';
+                if(fm & S_IWOTH)
+                    perms[8] = 'w';
+                if(fm & S_IXOTH)
+                    perms[9] = 'x';
+
+        struct tm * timeinfo;
+        time_t access_time= s.st_atimespec.tv_sec;
+        char access_buff[20];
+        timeinfo = localtime (&(access_time));
+        strftime(access_buff, 20, "%Y-%m%d %T", timeinfo);
+        time_t modify_time = s.st_mtimespec.tv_sec;
+        char modify_buff[20];
+        timeinfo = localtime(&(modify_time));
+        strftime(modify_buff, 20,"%Y-%m%d %T",timeinfo);
+        time_t change_time = s.st_ctimespec.tv_sec;
+        char change_buff[20];
+        timeinfo = localtime(&(change_time));
+        strftime(change_buff, 20,"%Y-%m%d %T",timeinfo);
+        
+        printf("File: %s\n", file_path);
+        printf("Size: %d     Blocks: %d     IOBlocks: %d \n", s.st_size, s.st_blksize, s.st_blocks);
+        printf("Device: %d     Inode: %d     Links: %d   \n", s.st_dev, s.st_ino, s.st_nlink);
+        printf("Access: (%s)     Uid:(%d)     Gid:(%d) \n", perms,s.st_uid,s.st_gid);
+        printf("Access: %s\n", &access_buff);
+        printf("Modify: %s\n", &modify_buff);
+        printf("Change: %s\n", &change_buff);
+    }
+    
 }
 
 void Command::clear_func() {
