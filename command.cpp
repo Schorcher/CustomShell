@@ -76,8 +76,8 @@ Command::COMMAND_CODES Command::hash(string const &str) {
 
     // Final Replacement Functions
     if (str == "cd") return cd;
-    if (str == "mkdir") return mkdir;
-    if (str == "rmdir") return rmdir;
+    if (str == "mkdir") return mkdirf;
+    if (str == "rmdir") return rmdirf;
     if (str == "stat") return statf;
     if (str == "sleep") return sleepf;
     if (str == "kill") return killf;
@@ -88,8 +88,7 @@ Command::COMMAND_CODES Command::hash(string const &str) {
 }
 
 void Command::execute() {
-    switch(hash(arguments.at(0)))
-    {
+    switch (hash(arguments.at(0))) {
         // Basic Functions
         case ls:
             ls_func();
@@ -116,14 +115,14 @@ void Command::execute() {
             help_func();
             break;
 
-        // Advanced Functions
+            // Advanced Functions
         case cd:
             cd_func();
             break;
-        case mkdir:
+        case mkdirf:
             mkdir_func();
             break;
-        case rmdir:
+        case rmdirf:
             rmdir_func();
             break;
         case statf:
@@ -148,7 +147,7 @@ void Command::execute() {
             wait_func();
             break;
 
-        // Default function
+            // Default function
         default:
             cout << "Error: Unknown command!" << endl;
             help_func();
@@ -156,19 +155,18 @@ void Command::execute() {
     }
 }
 
-
 // Basic Functions
 void Command::ls_func() {
-    DIR* dir;
-    dirent* pdir;
+    DIR *dir;
+    dirent *pdir;
     dir = opendir(".");
 
-    if(arguments.front() == "ll" || arguments.size() > 1) {
+    if (arguments.front() == "ll" || arguments.size() > 1) {
         // Process arguments to ls
-        if(arguments.front() == "ll" || arguments.at(1) == "-l") {
+        if (arguments.front() == "ll" || arguments.at(1) == "-l") {
             // Standard ls -l implementation with 1 args
-            char* first = nullptr;
-            char* second = nullptr;
+            char *first = nullptr;
+            char *second = nullptr;
 
             while (pdir = readdir(dir)) {
 
@@ -178,25 +176,25 @@ void Command::ls_func() {
                 // Create permissions
                 char perms[11] = "--------\0";
                 mode_t fm = filestat.st_mode;
-                if(pdir->d_type == DT_DIR)
+                if (pdir->d_type == DT_DIR)
                     perms[0] = 'd';
-                if(fm & S_IRUSR)
+                if (fm & S_IRUSR)
                     perms[1] = 'r';
-                if(fm & S_IWUSR)
+                if (fm & S_IWUSR)
                     perms[2] = 'w';
-                if(fm & S_IXUSR)
+                if (fm & S_IXUSR)
                     perms[3] = 'x';
-                if(fm & S_IRGRP)
+                if (fm & S_IRGRP)
                     perms[4] = 'r';
-                if(fm & S_IWGRP)
+                if (fm & S_IWGRP)
                     perms[5] = 'w';
-                if(fm & S_IXGRP)
+                if (fm & S_IXGRP)
                     perms[6] = 'x';
-                if(fm & S_IROTH)
+                if (fm & S_IROTH)
                     perms[7] = 'r';
-                if(fm & S_IWOTH)
+                if (fm & S_IWOTH)
                     perms[8] = 'w';
-                if(fm & S_IXOTH)
+                if (fm & S_IXOTH)
                     perms[9] = 'x';
 
                 // Create time
@@ -208,24 +206,24 @@ void Command::ls_func() {
                 struct passwd userdat = *getpwuid(filestat.st_uid);
                 struct group groupdat = *getgrgid(filestat.st_gid);
 
-                if(strcmp(pdir->d_name, ".") == 0) {
-                    first = (char*)malloc(1024);
-                    snprintf(first, 1023, "%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s" ANSI_COLOR_RESET,perms,
+                if (strcmp(pdir->d_name, ".") == 0) {
+                    first = (char *) malloc(1024);
+                    snprintf(first, 1023, "%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s" ANSI_COLOR_RESET, perms,
                              filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
                              pdir->d_name);
-                } else if(strcmp(pdir->d_name, "..") == 0) {
-                    second = (char*)malloc(1024);
-                    snprintf(second, 1023, "%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s" ANSI_COLOR_RESET,perms,
+                } else if (strcmp(pdir->d_name, "..") == 0) {
+                    second = (char *) malloc(1024);
+                    snprintf(second, 1023, "%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s" ANSI_COLOR_RESET, perms,
                              filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
                              pdir->d_name);
                 }
             }
 
-            if(first != nullptr) {
+            if (first != nullptr) {
                 cout << first << endl;
                 free(first);
             }
-            if(second != nullptr) {
+            if (second != nullptr) {
                 cout << second << endl;
                 free(second);
             }
@@ -234,7 +232,7 @@ void Command::ls_func() {
             //seekdir(dir,0);
             while (pdir = readdir(dir)) {
 
-                if(strcmp(pdir->d_name, ".")==0 || strcmp(pdir->d_name, "..")==0) {
+                if (strcmp(pdir->d_name, ".") == 0 || strcmp(pdir->d_name, "..") == 0) {
                     continue;
                 }
 
@@ -244,25 +242,25 @@ void Command::ls_func() {
                 // Create permissions
                 char perms[11] = "--------\0";
                 mode_t fm = filestat.st_mode;
-                if(pdir->d_type == DT_DIR)
+                if (pdir->d_type == DT_DIR)
                     perms[0] = 'd';
-                if(fm & S_IRUSR)
+                if (fm & S_IRUSR)
                     perms[1] = 'r';
-                if(fm & S_IWUSR)
+                if (fm & S_IWUSR)
                     perms[2] = 'w';
-                if(fm & S_IXUSR)
+                if (fm & S_IXUSR)
                     perms[3] = 'x';
-                if(fm & S_IRGRP)
+                if (fm & S_IRGRP)
                     perms[4] = 'r';
-                if(fm & S_IWGRP)
+                if (fm & S_IWGRP)
                     perms[5] = 'w';
-                if(fm & S_IXGRP)
+                if (fm & S_IXGRP)
                     perms[6] = 'x';
-                if(fm & S_IROTH)
+                if (fm & S_IROTH)
                     perms[7] = 'r';
-                if(fm & S_IWOTH)
+                if (fm & S_IWOTH)
                     perms[8] = 'w';
-                if(fm & S_IXOTH)
+                if (fm & S_IXOTH)
                     perms[9] = 'x';
 
                 // Create time
@@ -274,14 +272,14 @@ void Command::ls_func() {
                 struct passwd userdat = *getpwuid(filestat.st_uid);
                 struct group groupdat = *getgrgid(filestat.st_gid);
 
-                if(pdir->d_type == DT_DIR) {
-                    printf("%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s\n" ANSI_COLOR_RESET,perms,
-                             filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
-                             pdir->d_name);
+                if (pdir->d_type == DT_DIR) {
+                    printf("%s. %li %s:%s %li %s" ANSI_COLOR_BLUE " %s\n" ANSI_COLOR_RESET, perms,
+                           filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
+                           pdir->d_name);
                 } else {
-                    printf("%s. %li %s:%s %li %s %s\n",perms,
-                             filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
-                             pdir->d_name);
+                    printf("%s. %li %s:%s %li %s %s\n", perms,
+                           filestat.st_nlink, userdat.pw_name, groupdat.gr_name, filestat.st_size, strTime,
+                           pdir->d_name);
                 }
 
             }
@@ -305,25 +303,25 @@ bool Command::streamfile(int srcfile, int dstfile) {
     int numBytes = 0;
     off_t totalbytes = 0;
 
-    do{
-        numBytes = read(srcfile,&buffer,1024);
-        if(numBytes < 0)
+    do {
+        numBytes = read(srcfile, &buffer, 1024);
+        if (numBytes < 0)
             break;
         int nbw = write(dstfile, &buffer, numBytes);
-        if(nbw < 0)
+        if (nbw < 0)
             numBytes = -1;
         else
             totalbytes += numBytes;
-    } while(numBytes >= 1024);
+    } while (numBytes >= 1024);
 
-    if(numBytes < 0) {
-        char* strerr = strerror(errno);
+    if (numBytes < 0) {
+        char *strerr = strerror(errno);
         //cout << ANSI_COLOR_RED << strerr << ANSI_COLOR_RESET << endl;
         return false;
     } else {
         int res = ftruncate(dstfile, totalbytes);
-        if(res < 0) {
-            char* strerr = strerror(errno);
+        if (res < 0) {
+            char *strerr = strerror(errno);
             //cout << ANSI_COLOR_RED << strerr << ANSI_COLOR_RESET << endl;
             return false;
         }
@@ -332,15 +330,15 @@ bool Command::streamfile(int srcfile, int dstfile) {
 }
 
 void Command::cp_func() {
-    if(arguments.size() > 3){
+    if (arguments.size() > 3) {
         // Do multiple file copy
         vector<string> files;
-        const char* dir;
+        const char *dir;
 
         //DIR* dir;
 
-        for(int i=1; i<arguments.size()-1; i++){
-             files.push_back(arguments.at(i));
+        for (int i = 1; i < arguments.size() - 1; i++) {
+            files.push_back(arguments.at(i));
         }
         dir = arguments.back().c_str();
 
@@ -348,37 +346,35 @@ void Command::cp_func() {
         size_t lendir = strlen(dir);
         struct stat dirstat;
         stat(dir, &dirstat);
-        if(!S_ISDIR(dirstat.st_mode)){
+        if (!S_ISDIR(dirstat.st_mode)) {
             cout << "The destination \"" << dir << "\" is not a directory." << endl;
         }
-        DIR* directory = opendir(dir);
-        if(directory == nullptr) {
-           char* strerr = strerror(errno);
+        DIR *directory = opendir(dir);
+        if (directory == nullptr) {
+            char *strerr = strerror(errno);
             cout << strerr << endl;
             return;
         }
         for (int i = 0; i < files.size(); ++i) {
-            auto destfile = (char *)malloc(strlen(files.at(i).c_str()) + 2 + lendir);
-            strcpy(destfile,dir);
-            strcat(destfile,"/");
+            auto destfile = (char *) malloc(strlen(files.at(i).c_str()) + 2 + lendir);
+            strcpy(destfile, dir);
+            strcat(destfile, "/");
             strcat(destfile, files.at(i).c_str());
 
             int srcFile = open(files.at(i).c_str(), O_RDONLY);
-            if(srcFile < 0)
-            {
-                char* strerr = strerror(errno);
+            if (srcFile < 0) {
+                char *strerr = strerror(errno);
                 cout << strerr << endl;
                 return;
             }
             int dstFile = open(destfile, O_CREAT | O_WRONLY);
-            if(dstFile < 0)
-            {
-                char* strerr = strerror(errno);
+            if (dstFile < 0) {
+                char *strerr = strerror(errno);
                 cout << strerr << endl;
                 close(srcFile);
                 return;
             }
-            streamfile(srcFile,dstFile);
+            streamfile(srcFile, dstFile);
             close(srcFile);
             close(dstFile);
             free(destfile);
@@ -391,16 +387,14 @@ void Command::cp_func() {
 
         // Do the copy
         int srcFile = open(file1.c_str(), O_RDONLY);
-        if(srcFile < 0)
-        {
-            char* strerr = strerror(errno);
+        if (srcFile < 0) {
+            char *strerr = strerror(errno);
             cout << strerr << endl;
             return;
         }
-        int dstFile = open(file2.c_str(),O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-        if(dstFile < 0)
-        {
-            char* strerr = strerror(errno);
+        int dstFile = open(file2.c_str(), O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+        if (dstFile < 0) {
+            char *strerr = strerror(errno);
             cout << strerr << endl;
             close(srcFile);
             return;
@@ -416,31 +410,30 @@ void Command::cat_func() {
     char line[100];
     FILE *fp;
 
-    if(arguments.at(arguments.size()-2) == ">") {
+    if (arguments.at(arguments.size() - 2) == ">") {
         // TODO: Do multiple file output to file
         vector<string> files;
-        for(int i=1; i<arguments.size()-1; i++){
+        for (int i = 1; i < arguments.size() - 1; i++) {
             files.push_back(arguments.at(i));
         }
 
-        const char* output;
-        const char* srcFile;
+        const char *output;
+        const char *srcFile;
         output = arguments.back().c_str();
 
         int dstFile = open(output, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-        if(dstFile < 0)
-        {
-            char* strerr = strerror(errno);
+        if (dstFile < 0) {
+            char *strerr = strerror(errno);
             cout << strerr << endl;
             return;
         }
 
-        for(int i=0; i<files.size(); ++i) {
+        for (int i = 0; i < files.size(); ++i) {
 
             srcFile = files.at(i).c_str();
             int fileOpen = open(srcFile, O_RDONLY);
 
-            streamfile(fileOpen,dstFile);
+            streamfile(fileOpen, dstFile);
             close(fileOpen);
         }
 
@@ -451,8 +444,7 @@ void Command::cat_func() {
         // initialsing the file pointer to read
         //fp = fopen(arguments.at(1).c_str(),"r");
 
-        if(! (fp = fopen(arguments.at(1).c_str(),"r")))
-        {
+        if (!(fp = fopen(arguments.at(1).c_str(), "r"))) {
             //char* strerr = strerror(errno);
             cout << "cat: " << arguments.at(1).c_str() << ": No such file or directory" << endl;
             return;
@@ -460,8 +452,7 @@ void Command::cat_func() {
 
 
         // reading line by line and comparing each word in line
-        while(fscanf(fp , "%[^\n]\n" , line)!=EOF)
-        {
+        while (fscanf(fp, "%[^\n]\n", line) != EOF) {
             // print that line
             cout << "\t" << line << endl;
             //printf("%s\n" , line);
@@ -475,26 +466,22 @@ void Command::grep_func() {
     char line[100];
     FILE *fp;
 
-    for(int i=2; i<arguments.size(); ++i) {
+    for (int i = 2; i < arguments.size(); ++i) {
         // initialsing the file pointer to read
-        fp = fopen(arguments.at(i).c_str(),"r");
+        fp = fopen(arguments.at(i).c_str(), "r");
 
 //        if(arguments.at(1).front() == "\"") {
 //            arguments.erase(0,1);
 //        }
 
         // reading line by line and comparing each word in line
-        while(fscanf(fp , "%[^\n]\n" , line)!=EOF)
-        {
-            if(strstr(line , arguments.at(1).c_str()) != nullptr)
-            {
+        while (fscanf(fp, "%[^\n]\n", line) != EOF) {
+            if (strstr(line, arguments.at(1).c_str()) != nullptr) {
                 // print that line
                 cout << "\nFrom file: " << arguments.at(i) << endl;
                 cout << "\t" << line << endl;
                 //printf("%s\n" , line);
-            }
-            else
-            {
+            } else {
                 continue;
             }
         }
@@ -505,7 +492,7 @@ void Command::grep_func() {
 
 void Command::clear_func() {
     int i;
-    for (i=0; i<10; i++)
+    for (i = 0; i < 10; i++)
         cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << endl;
 }
 
@@ -516,46 +503,144 @@ void Command::exit_func() {
 // Final Replacement Functions
 void Command::cd_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
             printf("wait: usage: wait [id]\n");
             return;
         }
 
+        const char *dir = arguments.at(1).c_str();
 
+        if (strcmp(dir, "~") == 0) {
+            char directory[1024];
+            chdir(directory);
+            return;
+        }
 
+        if (chdir(dir) == -1) {
+            int err = errno;
+            char *se = strerror(err);
+            printf("%s\n", se);
+        }
+
+    } else {
+        printf("No directory specified.\n");
     }
 }
 
 void Command::mkdir_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
-            printf("wait: usage: wait [id]\n");
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("Usage: mkdir DIRECTORY...\n");
+            printf("Create the DIRECTORY(ies), if they do not already exist.\n");
             return;
         }
+
+        for (int i = 1; i < arguments.size(); i++) {
+            if (mkdir(arguments.at(i).c_str(),
+                      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IRGRP | S_IXUSR | S_IXGRP | S_IXOTH | S_IROTH) != 0) {
+                //error making directory
+                printf("mkdir: %s\n", strerror(errno));
+                return;
+            }
+        }
+
+    } else {
+        printf("mkdir: missing operand\n");
+        printf("Try 'mkdir --help' for more information.\n");
     }
 }
 
 void Command::rmdir_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
-            printf("wait: usage: wait [id]\n");
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("Usage: rmdir DIRECTORY...\n");
+            printf("Delete the DIRECTORY(ies), if they exist.\n");
             return;
         }
+
+        for (int i = 1; i < arguments.size(); i++) {
+            if (rmdir(arguments.at(i).c_str()) != 0) {
+                printf("rmdir: %s\n", strerror(errno));
+                return;
+            }
+        }
+
+    } else {
+        printf("rmdir: missing operand\n");
+        printf("Try 'rmdir --help' for more information.\n");
     }
 }
 
 void Command::stat_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
-            printf("wait: usage: wait [id]\n");
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("diff: usage is 'diff file_or_directory1 file_or_directory2\n");
             return;
         }
+
+        struct stat s;
+        const char *file_path;
+
+        file_path = arguments.at(1).c_str();
+        if (stat(file_path, &s) == 1) {
+            printf("Error unable to locat %s", file_path);
+        } else {
+
+            char perms[11] = "---------\0";
+            mode_t fm = s.st_mode;
+            if (fm & S_IFDIR)
+                perms[0] = 'd';
+            if (fm & S_IRUSR)
+                perms[1] = 'r';
+            if (fm & S_IWUSR)
+                perms[2] = 'w';
+            if (fm & S_IXUSR)
+                perms[3] = 'x';
+            if (fm & S_IRGRP)
+                perms[4] = 'r';
+            if (fm & S_IWGRP)
+                perms[5] = 'w';
+            if (fm & S_IXGRP)
+                perms[6] = 'x';
+            if (fm & S_IROTH)
+                perms[7] = 'r';
+            if (fm & S_IWOTH)
+                perms[8] = 'w';
+            if (fm & S_IXOTH)
+                perms[9] = 'x';
+
+            struct tm *timeinfo;
+            time_t access_time = s.st_atimespec.tv_sec;
+            char access_buff[20];
+            timeinfo = localtime(&(access_time));
+            strftime(access_buff, 20, "%Y-%m%d %T", timeinfo);
+            time_t modify_time = s.st_mtimespec.tv_sec;
+            char modify_buff[20];
+            timeinfo = localtime(&(modify_time));
+            strftime(modify_buff, 20, "%Y-%m%d %T", timeinfo);
+            time_t change_time = s.st_ctimespec.tv_sec;
+            char change_buff[20];
+            timeinfo = localtime(&(change_time));
+            strftime(change_buff, 20, "%Y-%m%d %T", timeinfo);
+
+            printf("File: %s\n", file_path);
+            printf("Size: %d     Blocks: %d     IOBlocks: %d \n", s.st_size, s.st_blksize, s.st_blocks);
+            printf("Device: %d     Inode: %d     Links: %d   \n", s.st_dev, s.st_ino, s.st_nlink);
+            printf("Access: (%s)     Uid:(%d)     Gid:(%d) \n", perms, s.st_uid, s.st_gid);
+            printf("Access: %s\n", &access_buff);
+            printf("Modify: %s\n", &modify_buff);
+            printf("Change: %s\n", &change_buff);
+        }
+
+    } else {
+        printf("diff: missing operand after 'diff'\n");
+        printf("diff: Try 'diff --help' for more information.\n");
     }
 }
 
 void Command::sleep_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
             printf("Usage: sleep NUMBER(in seconds)...\n");
             printf("Pause for NUMBER seconds.\n");
             printf("NUMBER must be an integer.\n");
@@ -578,7 +663,7 @@ void Command::sleep_func() {
 
 void Command::kill_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
             printf("kill: usage: kill [signum] pid\n");
             return;
         }
@@ -588,18 +673,18 @@ void Command::kill_func() {
         int sigNum = 1;
         int sig = 9;
 
-        if(arguments.size() > 2) {
+        if (arguments.size() > 2) {
             hasSigNum = true;
             pidNum = 2;
             sigNum = 1;
         }
 
-        const char* option_sig = arguments.at(sigNum).c_str();
-        const char* option_pid = arguments.at(pidNum).c_str();
+        const char *option_sig = arguments.at(sigNum).c_str();
+        const char *option_pid = arguments.at(pidNum).c_str();
 
         pid_t pid = atoi(option_pid);
 
-        if(hasSigNum) {
+        if (hasSigNum) {
             sig = atoi(option_sig);
         } else {
             sig = 9;
@@ -613,23 +698,85 @@ void Command::kill_func() {
 
 void Command::diff_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
-            printf("wait: usage: wait [id]\n");
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("diff: usage is 'diff file_or_directory1 file_or_directory2\n");
             return;
         }
+
+        struct lines st[20];
+        FILE *fp1, *fp2;
+        char line1[100], line2[100];
+        int line_count1 = 0, fg2[10], fg1[10], line_count2 = 0;
+        int i = 0, j = 0, k = 0, n = 0, m = 0, o = 0;
+
+        fp1 = fopen(arguments.at(1).c_str(), "r");
+        fp2 = fopen(arguments.at(2).c_str(), "r");
+
+        while (1) {
+            line_count1++;
+            line_count2++;
+
+            if (fscanf(fp1, "%[^\n]\n", line1) != EOF && fscanf(fp2, "%[^\n]\n", line2) != EOF) {
+                if (strcmp(line1, line2) == 0)
+                    continue;
+                else {
+                    if (line1 != NULL) {
+                        strcpy(st[i].stack_lines1, line1);
+                        fg1[m] = line_count1;
+                        m++;
+                    }
+                    if (line2 != NULL) {
+                        strcpy(st[i].stack_lines2, line2);
+                        fg2[o] = line_count2;
+                        o++;
+                    }
+                }
+            } else if (fscanf(fp1, "%[^\n]\n", line1) != EOF) {
+                strcpy(st[i].stack_lines1, line1);
+                fg1[m] = line_count1;
+                m++;
+            } else if (fscanf(fp2, "%[^\n]\n", line2) != EOF) {
+                strcpy(st[i].stack_lines2, line2);
+                fg2[o] = line_count2;
+                o++;
+            } else
+                break;
+            i++;
+            n++;
+        }
+
+        for (i = 0; i < m; i++) {
+            printf("%d,", fg1[i]);
+        }
+        printf("c");
+        for (i = 0; i < o; i++) {
+            printf("%d,", fg2[i]);
+        }
+        printf("\n");
+        for (i = 0; i < n; i++) {
+            printf("%s\n", st[i].stack_lines1);
+        }
+        printf("---\n");
+        for (i = 0; i < n; i++) {
+            printf("%s\n", st[i].stack_lines2);
+        }
+        fclose(fp1);
+        fclose(fp2);
+    } else {
+        printf("diff: missing operand after 'diff'\n");
+        printf("diff: Try 'diff --help' for more information.\n");
     }
 }
 
 void Command::env_func() {
-    for (char** env = this->parent->getEnvPtr(); *env != NULL; env++)
-    {
+    for (char **env = this->parent->getEnvPtr(); *env != NULL; env++) {
         printf("%s\n", *env);
     }
 }
 
 void Command::timeout_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
             printf("wait: usage: wait [id]\n");
             return;
         }
@@ -638,7 +785,7 @@ void Command::timeout_func() {
 
 void Command::wait_func() {
     if (arguments.size() > 1) {
-        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+        if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
             printf("wait: usage: wait [id]\n");
             return;
         }
@@ -648,8 +795,7 @@ void Command::wait_func() {
         //now check if the process with pid actually exists
         //and if it does exist, keep checking until kill returns -1
         //kill is used because we aren't always dealing with child processes
-        while(kill(pid, 0) != -1)
-        {
+        while (kill(pid, 0) != -1) {
             usleep(250000); //wait 0.25 seconds in between checks
         }
 
@@ -658,7 +804,7 @@ void Command::wait_func() {
 
         //if kill failed for a different reason, then print the error
         //because this time there was actually an error
-        if(errno != ESRCH)
+        if (errno != ESRCH)
             printf("wait: error: %s\n", strerror(errno));
     }
 }
@@ -671,6 +817,16 @@ void Command::help_func() {
     cout << "\tgrep" << endl;
     cout << "\tclear" << endl;
     cout << "\texit" << endl;
+    cout << "\tcd" << endl;
+    cout << "\tmkdir" << endl;
+    cout << "\trmdir" << endl;
+    cout << "\tstat" << endl;
+    cout << "\tsleep" << endl;
+    cout << "\tkill" << endl;
+    cout << "\tdiff" << endl;
+    cout << "\tenv" << endl;
+    cout << "\ttimeout" << endl;
+    cout << "\twait" << endl;
     cout << "\thelp" << endl;
     cout << endl;
 }

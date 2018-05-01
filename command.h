@@ -27,8 +27,8 @@ private:
         exit,
         help,
         cd,
-        mkdir,
-        rmdir,
+        mkdirf,
+        rmdirf,
         statf,
         sleepf,
         killf,
@@ -74,7 +74,10 @@ private:
 
     bool streamfile(int srcfile, int dstfile);
 
-
+    struct lines{
+            char stack_lines1[100];
+            char stack_lines2[100];
+        };
 
 public:
 
