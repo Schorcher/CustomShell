@@ -25,6 +25,7 @@ private:
         cat,
         grep,
         statf,
+        diff,
         clear,
         exit,
         help,
@@ -60,6 +61,7 @@ private:
     void cat_func();
     void grep_func();
     void stat_func();
+    void diff_func();
     void clear_func();
     void exit_func();
     void help_func();
