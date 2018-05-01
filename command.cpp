@@ -4,6 +4,7 @@
 
 #include "command.h"
 #include "shell.h"
+#include <cstdio>
 #include <cassert>
 #include <iostream>
 #include <fcntl.h>
@@ -13,12 +14,16 @@
 #include <cstring>
 #include <sstream>
 #include <dirent.h>
+#include <cerrno>
 #include <zconf.h>
 #include <sys/stat.h>
 #include <ctime>
 #include <pwd.h>
 #include <grp.h>
 #include <sys/ioctl.h>
+#include <csignal>
+#include <sys/wait.h>
+#include <thread>
 
 #define ANSI_COLOR_RED      "\x1b[91m"
 #define ANSI_COLOR_GREEN    "\x1b[92m"
@@ -59,6 +64,7 @@ int Command::parse(stringstream &ss) {
 }
 
 Command::COMMAND_CODES Command::hash(string const &str) {
+    // Basic Functionality
     if (str == "ls") return ls;
     if (str == "ll") return ll;
     if (str == "cp") return cp;
@@ -67,11 +73,24 @@ Command::COMMAND_CODES Command::hash(string const &str) {
     if (str == "clear") return clear;
     if (str == "exit") return exit;
     if (str == "help") return help;
+
+    // Final Replacement Functions
+    if (str == "cd") return cd;
+    if (str == "mkdir") return mkdir;
+    if (str == "rmdir") return rmdir;
+    if (str == "stat") return statf;
+    if (str == "sleep") return sleepf;
+    if (str == "kill") return killf;
+    if (str == "diff") return diff;
+    if (str == "env") return env;
+    if (str == "timeout") return timeout;
+    if (str == "wait") return wait;
 }
 
 void Command::execute() {
     switch(hash(arguments.at(0)))
     {
+        // Basic Functions
         case ls:
             ls_func();
             break;
@@ -96,6 +115,40 @@ void Command::execute() {
         case help:
             help_func();
             break;
+
+        // Advanced Functions
+        case cd:
+            cd_func();
+            break;
+        case mkdir:
+            mkdir_func();
+            break;
+        case rmdir:
+            rmdir_func();
+            break;
+        case statf:
+            stat_func();
+            break;
+        case sleepf:
+            sleep_func();
+            break;
+        case killf:
+            kill_func();
+            break;
+        case diff:
+            diff_func();
+            break;
+        case env:
+            env_func();
+            break;
+        case timeout:
+            timeout_func();
+            break;
+        case wait:
+            wait_func();
+            break;
+
+        // Default function
         default:
             cout << "Error: Unknown command!" << endl;
             help_func();
@@ -103,6 +156,8 @@ void Command::execute() {
     }
 }
 
+
+// Basic Functions
 void Command::ls_func() {
     DIR* dir;
     dirent* pdir;
@@ -458,6 +513,156 @@ void Command::exit_func() {
     this->parent->shellExit();
 }
 
+// Final Replacement Functions
+void Command::cd_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+
+
+
+    }
+}
+
+void Command::mkdir_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+    }
+}
+
+void Command::rmdir_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+    }
+}
+
+void Command::stat_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+    }
+}
+
+void Command::sleep_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("Usage: sleep NUMBER(in seconds)...\n");
+            printf("Pause for NUMBER seconds.\n");
+            printf("NUMBER must be an integer.\n");
+            printf("Any number of NUMBER values may be supplied. The system\n");
+            printf("will pause for the the time specified by the number.\n");
+            return;
+        }
+
+        int seconds = std::stoi(arguments.at(1));
+
+        sleep(seconds);
+
+
+    } else {
+        printf("sleep: missing operand.\n");
+        printf("Try 'sleep --help' for more information.\n");
+        return;
+    }
+}
+
+void Command::kill_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("kill: usage: kill [signum] pid\n");
+            return;
+        }
+
+        bool hasSigNum = false;
+        int pidNum = 1;
+        int sigNum = 1;
+        int sig = 9;
+
+        if(arguments.size() > 2) {
+            hasSigNum = true;
+            pidNum = 2;
+            sigNum = 1;
+        }
+
+        const char* option_sig = arguments.at(sigNum).c_str();
+        const char* option_pid = arguments.at(pidNum).c_str();
+
+        pid_t pid = atoi(option_pid);
+
+        if(hasSigNum) {
+            sig = atoi(option_sig);
+        } else {
+            sig = 9;
+        }
+
+        if (kill(pid, sig) == -1) {
+            printf("kill: error: %s", strerror(errno));
+        }
+    }
+}
+
+void Command::diff_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+    }
+}
+
+void Command::env_func() {
+    for (char** env = this->parent->getEnvPtr(); *env != NULL; env++)
+    {
+        printf("%s\n", *env);
+    }
+}
+
+void Command::timeout_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+    }
+}
+
+void Command::wait_func() {
+    if (arguments.size() > 1) {
+        if(arguments.at(1) == "--help" || arguments.at(1) == "-h") {
+            printf("wait: usage: wait [id]\n");
+            return;
+        }
+
+        pid_t pid = stoi(arguments.at(1).c_str());
+
+        //now check if the process with pid actually exists
+        //and if it does exist, keep checking until kill returns -1
+        //kill is used because we aren't always dealing with child processes
+        while(kill(pid, 0) != -1)
+        {
+            usleep(250000); //wait 0.25 seconds in between checks
+        }
+
+        //at this point kill has failed for some reason
+        //return from this function if kill failed because the pid terminated
+
+        //if kill failed for a different reason, then print the error
+        //because this time there was actually an error
+        if(errno != ESRCH)
+            printf("wait: error: %s\n", strerror(errno));
+    }
+}
+
 void Command::help_func() {
     cout << "Available functions: " << endl;
     cout << "\tls" << endl;
@@ -469,3 +674,5 @@ void Command::help_func() {
     cout << "\thelp" << endl;
     cout << endl;
 }
+
+

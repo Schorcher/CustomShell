@@ -25,7 +25,17 @@ private:
         grep,
         clear,
         exit,
-        help
+        help,
+        cd,
+        mkdir,
+        rmdir,
+        statf,
+        sleepf,
+        killf,
+        diff,
+        env,
+        timeout,
+        wait
     };
 
     // Vector of the arguments including the command itself
@@ -41,6 +51,7 @@ private:
 
     COMMAND_CODES hash (string const& str);
 
+    // Basic Functions
     void ls_func();
     void cp_func();
     void cat_func();
@@ -49,7 +60,21 @@ private:
     void exit_func();
     void help_func();
 
+    // Final Replacement Functions
+    void cd_func();
+    void mkdir_func();
+    void rmdir_func();
+    void stat_func();
+    void sleep_func();
+    void kill_func();
+    void diff_func();
+    void env_func();
+    void timeout_func();
+    void wait_func();
+
     bool streamfile(int srcfile, int dstfile);
+
+
 
 public:
 
