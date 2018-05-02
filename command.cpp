@@ -24,6 +24,7 @@
 #include <csignal>
 #include <sys/wait.h>
 #include <thread>
+#include <time.h>
 
 #define ANSI_COLOR_RED      "\x1b[91m"
 #define ANSI_COLOR_GREEN    "\x1b[92m"
@@ -33,7 +34,6 @@
 #define ANSI_COLOR_CYAN     "\x1b[91m"
 #define ANSI_COLOR_RESET    "\x1b[0m"
 #define ANSI_TEXT_BOLD      "\x1b[1m"
-
 
 using namespace std;
 
@@ -68,8 +68,11 @@ Command::COMMAND_CODES Command::hash(string const &str) {
     if (str == "ls") return ls;
     if (str == "ll") return ll;
     if (str == "cp") return cp;
+    if (str == "cd") return cd;
     if (str == "cat") return cat;
     if (str == "grep") return grep;
+    if (str == "stat") return statf;
+    if (str == "diff") return diff;
     if (str == "clear") return clear;
     if (str == "exit") return exitf;
     if (str == "help") return help;
@@ -99,11 +102,20 @@ void Command::execute() {
         case cp:
             cp_func();
             break;
+        case cd:
+            cd_func();
+            break;
         case cat:
             cat_func();
             break;
         case grep:
             grep_func();
+            break;
+        case statf:
+            stat_func();
+            break;
+        case diff:
+            diff_func();
             break;
         case clear:
             clear_func();
@@ -474,6 +486,25 @@ void Command::cp_func() {
     }
 }
 
+void Command::cd_func(){
+    const char* dir_path;
+
+    dir_path = arguments.at(1).c_str();
+    if(chdir(dir_path)){
+        switch(errno)
+        {
+        case ENOENT:
+            printf("Unable to locate the directory: %s\n", dir_path);
+            break;
+        default:
+            printf("Unknown error.\n");
+            break;
+        }
+    }else{
+        printf("Changed to directory: %s\n", arguments.at(1).c_str());
+    }
+}
+
 void Command::cat_func() {
     char line[100];
     FILE *fp;
@@ -541,6 +572,13 @@ void Command::grep_func() {
 //        if(arguments.at(1).front() == "\"") {
 //            arguments.erase(0,1);
 //        }
+        
+        if(arguments.at(1).front() == '\"') {
+            arguments.at(1).front() = '\0';
+        }
+        if(arguments.at(1).back() == '\"'){
+            arguments.at(1).back() = '\0';
+        }
 
         // reading line by line and comparing each word in line
         while (fscanf(fp, "%[^\n]\n", line) != EOF) {
@@ -557,6 +595,142 @@ void Command::grep_func() {
     }
 
 }
+
+void Command::stat_func(){
+    struct stat s;
+    const char* file_path;
+
+    file_path = arguments.at(1).c_str();
+    if(stat(file_path, &s)==1){
+        printf("Error unable to locat %s", file_path);
+    }
+    else{
+
+        char perms[11] = "---------\0";
+                mode_t fm = s.st_mode;
+                if(fm & S_IFDIR)
+                    perms[0] = 'd';
+                if(fm & S_IRUSR)
+                    perms[1] = 'r';
+                if(fm & S_IWUSR)
+                    perms[2] = 'w';
+                if(fm & S_IXUSR)
+                    perms[3] = 'x';
+                if(fm & S_IRGRP)
+                    perms[4] = 'r';
+                if(fm & S_IWGRP)
+                    perms[5] = 'w';
+                if(fm & S_IXGRP)
+                    perms[6] = 'x';
+                if(fm & S_IROTH)
+                    perms[7] = 'r';
+                if(fm & S_IWOTH)
+                    perms[8] = 'w';
+                if(fm & S_IXOTH)
+                    perms[9] = 'x';
+
+        struct tm * timeinfo;
+        time_t access_time= s.st_atimespec.tv_sec;
+        char access_buff[20];
+        timeinfo = localtime (&(access_time));
+        strftime(access_buff, 20, "%Y-%m%d %T", timeinfo);
+        time_t modify_time = s.st_mtimespec.tv_sec;
+        char modify_buff[20];
+        timeinfo = localtime(&(modify_time));
+        strftime(modify_buff, 20,"%Y-%m%d %T",timeinfo);
+        time_t change_time = s.st_ctimespec.tv_sec;
+        char change_buff[20];
+        timeinfo = localtime(&(change_time));
+        strftime(change_buff, 20,"%Y-%m%d %T",timeinfo);
+        
+        printf("File: %s\n", file_path);
+        printf("Size: %d     Blocks: %d     IOBlocks: %d \n", s.st_size, s.st_blksize, s.st_blocks);
+        printf("Device: %d     Inode: %d     Links: %d   \n", s.st_dev, s.st_ino, s.st_nlink);
+        printf("Access: (%s)     Uid:(%d)     Gid:(%d) \n", perms,s.st_uid,s.st_gid);
+        printf("Access: %s\n", &access_buff);
+        printf("Modify: %s\n", &modify_buff);
+        printf("Change: %s\n", &change_buff);
+    }
+    
+}
+
+struct lines{
+    char stack_lines1[100];
+    char stack_lines2[100];
+ };
+
+void Command :: diff_func(){
+    struct lines st[20];
+    FILE *fp1,*fp2;
+    char line1[100],line2[100];
+    int line_count1=0,fg2[10],fg1[10],line_count2=0;
+    int i=0,j=0,k=0,n=0,m=0,o=0;
+ 
+    fp1 = fopen(arguments.at(1).c_str(),"r");
+    fp2 = fopen(arguments.at(2).c_str(),"r");
+ 
+     while(1)
+     {
+            line_count1++;
+            line_count2++;
+         
+           if(fscanf(fp1,"%[^\n]\n",line1)!=EOF && fscanf(fp2,"%[^\n]\n",line2)!=EOF)
+           {
+                  if(strcmp(line1,line2) == 0)
+                        continue;
+                  else{
+                    if(line1 != NULL){
+                        strcpy(st[i].stack_lines1 , line1);
+                        fg1[m]=line_count1;
+                        m++;
+                      }
+                      if(line2 != NULL){
+                            strcpy(st[i].stack_lines2 , line2);
+                            fg2[o]=line_count2;
+                            o++;
+                      }
+                  }
+           }
+           else if(fscanf(fp1,"%[^\n]\n",line1)!=EOF){
+                  strcpy(st[i].stack_lines1 , line1);
+                  fg1[m]=line_count1;
+                  m++;
+            }
+           else if(fscanf(fp2,"%[^\n]\n",line2)!=EOF){
+                  strcpy(st[i].stack_lines2 , line2);
+                  fg2[o]=line_count2;
+                  o++;
+            }
+           else
+                  break;
+           i++;
+           n++;
+     }
+   
+     for(i=0;i<m;i++)
+     {
+        printf("%d,",fg1[i]);
+     }
+     printf("c");
+     for(i=0;i<o;i++)
+     {
+        printf("%d,",fg2[i]);
+     }
+     printf("\n");
+     for(i=0;i<n;i++)
+     {
+        printf("%s\n",st[i].stack_lines1);
+     }
+     printf("---\n");
+     for(i=0;i<n;i++)
+     {
+        printf("%s\n",st[i].stack_lines2);
+     }
+     fclose(fp1);
+     fclose(fp2);
+   
+}
+
 
 void Command::clear_func() {
     int i;

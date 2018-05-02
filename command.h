@@ -21,8 +21,11 @@ private:
         ls,
         ll,
         cp,
+        cd,
         cat,
         grep,
+        statf,
+        diff,
         clear,
         exitf,
         help,
@@ -55,8 +58,11 @@ private:
     // Basic Functions
     void ls_func();
     void cp_func();
+    void cd_func();
     void cat_func();
     void grep_func();
+    void stat_func();
+    void diff_func();
     void clear_func();
     void exit_func();
     void help_func();
