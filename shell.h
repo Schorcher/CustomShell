@@ -14,6 +14,16 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+
+#define ANSI_COLOR_RED      "\x1b[91m"
+#define ANSI_COLOR_GREEN    "\x1b[92m"
+#define ANSI_COLOR_YELLOW   "\x1b[93m"
+#define ANSI_COLOR_BLUE     "\x1b[94m"
+#define ANSI_COLOR_MAGENTA  "\x1b[95m"
+#define ANSI_COLOR_CYAN     "\x1b[91m"
+#define ANSI_COLOR_RESET    "\x1b[0m"
+#define ANSI_TEXT_BOLD      "\x1b[1m"
+
 using namespace std;
 
 struct child_info{
@@ -51,6 +61,9 @@ public:
 
     void setCWD(char* str);
 
+    static std::string getUsername();
+
+    static char* getHostname();
 
 private:
 
@@ -62,6 +75,10 @@ private:
     char ** env_ptr;
 
     char* cwd = nullptr;
+
+    char computername[128];
+
+    size_t hnSize = 10;
 
     uid_t uid;
 

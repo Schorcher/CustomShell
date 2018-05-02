@@ -4,8 +4,12 @@
 
 #include <iostream>
 #include <sstream>
+#include <zconf.h>
+#include <pwd.h>
 #include "shell.h"
 #include "command.h"
+#include <unistd.h>
+
 
 
 Shell::Shell(char **env) {
@@ -18,6 +22,8 @@ Shell::Shell(char **env) {
 
 void Shell::run() {
     printWelcome();
+    cwd = getcwd(NULL, 0);
+    gethostname(computername, 128);
     while(keepRunning) {
         shellLoop();
     }
@@ -51,7 +57,7 @@ void Shell::shellExit() {
 }
 
 void Shell::shellPrompt() {
-    cout << "# -> ";
+    cout << "# " << ANSI_COLOR_YELLOW << getUsername() << "@" << computername << ANSI_COLOR_RESET << "  " << ANSI_COLOR_BLUE << getCWD() << ANSI_COLOR_RESET << "\n-> ";
 }
 
 void Shell::printWelcome() {
@@ -68,9 +74,34 @@ char **Shell::getEnvPtr() {
 }
 
 char* Shell::getCWD() {
+    free(cwd);
+    cwd = getcwd(NULL, 0); //REMEMBER TO free() later
     return this->cwd;
 }
 
 void Shell::setCWD(char* str) {
     this->cwd = str;
+}
+
+string Shell::getUsername() {
+    register struct passwd *pw;
+    register uid_t uid;
+    int c;
+
+    uid = geteuid ();
+    pw = getpwuid (uid);
+    if (pw)
+    {
+        return std::string(pw->pw_name);
+    }
+    return std::string("");
+}
+
+char* Shell::getHostname() {
+    char hostname[1024];
+    //gethostname(hostname, 1024);
+    //puts(hostname);
+
+
+    return hostname;
 }
