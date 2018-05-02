@@ -71,7 +71,7 @@ Command::COMMAND_CODES Command::hash(string const &str) {
     if (str == "cat") return cat;
     if (str == "grep") return grep;
     if (str == "clear") return clear;
-    if (str == "exit") return exit;
+    if (str == "exit") return exitf;
     if (str == "help") return help;
 
     // Final Replacement Functions
@@ -108,7 +108,75 @@ void Command::execute() {
         case clear:
             clear_func();
             break;
-        case exit:
+        case exitf:
+            exit_func();
+            break;
+        case help:
+            help_func();
+            break;
+
+        // Advanced Functions
+        case cd:
+            cd_func();
+            break;
+        case mkdirf:
+            mkdir_func();
+            break;
+        case rmdirf:
+            rmdir_func();
+            break;
+        case statf:
+            stat_func();
+            break;
+        case sleepf:
+            sleep_func();
+            break;
+        case killf:
+            kill_func();
+            break;
+        case diff:
+            diff_func();
+            break;
+        case env:
+            env_func();
+            break;
+        case timeout:
+            timeout_func();
+            break;
+        case wait:
+            wait_func();
+            break;
+
+            // Default function
+        default:
+            cout << "Error: Unknown command!" << endl;
+            help_func();
+            break;
+    }
+}
+
+void Command::execute(const char* command) {
+    switch (hash(command)) {
+        // Basic Functions
+        case ls:
+            ls_func();
+            break;
+        case ll:
+            ls_func();
+            break;
+        case cp:
+            cp_func();
+            break;
+        case cat:
+            cat_func();
+            break;
+        case grep:
+            grep_func();
+            break;
+        case clear:
+            clear_func();
+            break;
+        case exitf:
             exit_func();
             break;
         case help:
@@ -777,9 +845,106 @@ void Command::env_func() {
 void Command::timeout_func() {
     if (arguments.size() > 1) {
         if (arguments.at(1) == "--help" || arguments.at(1) == "-h") {
-            printf("wait: usage: wait [id]\n");
+            printf("Usage: timeout NUMBER[SUFFIX] COMMAND [ARG]...\n");
+            printf("Start COMMAND, and kill it if still running after NUMBER seconds.\n");
+            printf("SUFFIX may be 's' for seconds (the default), 'm' for minutes,\n");
+            printf("'h' for hours or 'd' for days.\n");
             return;
         }
+
+        const char* timeout = arguments.at(1).c_str();
+
+        //determine how long the timeout will be
+        unsigned long time_out = 0;
+        unsigned long multiplier = 1;
+        int len = strlen(timeout);
+
+        if (timeout[len-1] == 'd')
+        {
+            multiplier = 60 * 60 * 24;
+            len--;
+        }
+        else if (timeout[len-1] == 'h')
+        {
+            multiplier = 60 * 60;
+            len--;
+        }
+        else if (timeout[len-1] == 'm')
+        {
+            multiplier = 60;
+            len--;
+        }
+        else if (timeout[len-1] == 's')
+            len--;
+
+        for (int i = 0; i < len; i++)
+            time_out = time_out * 10 + (timeout[i] - '0');
+        time_out *= multiplier;
+
+        //get the first token of the command to execute (the child process will need this later)
+        //if NULL, then this command will fail
+        const char* command = arguments.at(2).c_str();
+        if (command == NULL)
+        {
+            printf("timeout: No command given.\n");
+            return;
+        }
+
+        //now split a child process off of this one
+        pid_t child = 0;
+        child = fork();
+        if (child == -1)
+        {
+            printf("timeout: %s\n", strerror(errno));
+            return;
+        }
+
+        //the child process will now continue executing like normal
+        //by sending the command (stored in char* command) to docmd()
+        //in this shell application.
+        if (child == 0)
+        {
+            //execute() calls the appropriate command
+            //and each function does the appropriate call and everything
+            //the child process simply executes this function, and everything else
+            //happens normally.
+            //also this is the only time true is passed, that way if the command involves
+            //launching another process, a sub-child won't be created
+            execute(command);
+
+            //now this child process exits gracefully
+            exit(0);
+        }
+        else
+        {
+            //meanwhile the parent process is going to sleep for the specified amount of time
+            unsigned long time_spent = 0;
+            int stat;
+            while (time_spent < time_out)
+            {
+                waitpid(child, &stat, WUNTRACED);
+                if (WIFEXITED(stat) || WIFSIGNALED(stat))
+                    break;
+                sleep(1);
+                time_spent++;
+            }
+
+            //now that the parent has waited for the timeout period, check if the child process is still alive
+            int status = 0;
+            pid_t result = waitpid(child, &status, WNOHANG); //immediately returns with a result
+
+            if (result == 0)
+            {
+                //child process is still running, so kill it
+                int res = kill(child, SIGKILL);
+                if (res == -1)
+                    printf("timeout: %s", strerror(errno));
+            }
+        }
+
+
+    } else {
+        printf("For help using the command type '--help' or '-h'\n");
     }
 }
 

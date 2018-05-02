@@ -24,7 +24,7 @@ private:
         cat,
         grep,
         clear,
-        exit,
+        exitf,
         help,
         cd,
         mkdirf,
@@ -35,7 +35,8 @@ private:
         diff,
         env,
         timeout,
-        wait
+        wait,
+        scriptf
     };
 
     // Vector of the arguments including the command itself
@@ -71,6 +72,7 @@ private:
     void env_func();
     void timeout_func();
     void wait_func();
+    void script_func();
 
     bool streamfile(int srcfile, int dstfile);
 
@@ -94,6 +96,8 @@ public:
     int parse(stringstream &ss);
 
     void execute();
+
+    void execute(const char* command);
 };
 
 
